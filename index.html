@@ -360,6 +360,12 @@
 
         <div class="card">
           <h2>🔆 Panel solar</h2>
+          <label for="tipo-sistema">Tipo de sistema</label>
+          <select id="tipo-sistema">
+            <option value="Fijo">Fijo (sin seguidor)</option>
+            <option value="Seguidor 1 eje">Seguidor 1 eje (+27%)</option>
+            <option value="Seguidor 2 ejes">Seguidor 2 ejes (+38%)</option>
+          </select>
           <label for="area">Área de paneles (m²)</label>
           <input type="number" id="area" value="10" step="1" min="1">
           <label for="eficiencia">Eficiencia del panel (%)</label>
@@ -414,6 +420,7 @@
             <button class="submodo-btn active" data-grafica="mensual">Mensual</button>
             <button class="submodo-btn" data-grafica="ahorro">Ahorro 20 años</button>
             <button class="submodo-btn" data-grafica="consumo">vs Hogar</button>
+            <button class="submodo-btn" data-grafica="seguidor">🔁 Seguidor</button>
             <button class="submodo-btn" data-grafica="detalle">Detalle</button>
           </div>
 
@@ -425,6 +432,9 @@
           </div>
           <div class="submodo-grupo" id="grafica-consumo">
             <div class="grafica-wrap"><canvas id="chart-consumo"></canvas></div>
+          </div>
+          <div class="submodo-grupo" id="grafica-seguidor">
+            <div class="grafica-wrap"><canvas id="chart-seguidor"></canvas></div>
           </div>
           <div class="submodo-grupo" id="grafica-detalle">
             <table id="tabla-detalle">
@@ -500,12 +510,47 @@
       </div>
 
       <div class="aprende-card">
+        <h3>🔁 Seguidores solares (solar trackers)</h3>
+        <p>Un seguidor solar es un mecanismo que orienta el panel hacia el sol durante todo el día,
+        como un girasol. Hay dos tipos principales:</p>
+        <ul class="lista-bonita">
+          <li><b>Un eje (este-oeste):</b> rota durante el día siguiendo la trayectoria del sol.
+              Ganancia típica: <b>+25 a +35%</b> de energía vs panel fijo.</li>
+          <li><b>Dos ejes (azimut + altitud):</b> además ajusta la inclinación según la estación.
+              Ganancia típica: <b>+35 a +45%</b> de energía vs panel fijo.</li>
+        </ul>
+        <p>El costo del seguidor es mayor (1 eje: ~25% más; 2 ejes: ~50% más), pero a largo plazo
+        suele compensar — sobre todo en latitudes altas o granjas solares grandes. La calculadora
+        permite cambiar el <b>Tipo de sistema</b> arriba para comparar.</p>
+      </div>
+
+      <div class="aprende-card naranja">
+        <h3>🔧 Cómo construir un seguidor (proyecto del club)</h3>
+        <p><b>Materiales recomendados:</b></p>
+        <ul class="lista-bonita">
+          <li>Arduino UNO o ESP32 (~$150 MXN)</li>
+          <li>1 o 2 servomotores SG90 o MG996R (~$60–200 MXN)</li>
+          <li>4 fotorresistencias LDR montadas en cruz (~$10 MXN)</li>
+          <li>4 resistencias de 10 kΩ para divisor de tensión</li>
+          <li>Panel solar pequeño 6V / 1W para pruebas</li>
+          <li>Estructura: madera, perfil de aluminio o impresión 3D</li>
+        </ul>
+        <p><b>Lógica de control:</b> el Arduino lee las 4 LDR (arriba, abajo, izquierda, derecha).
+        Si una recibe más luz que la otra, mueve el servo hacia ese lado hasta que las cuatro miden
+        lo mismo — eso significa que el panel está apuntando al sol.</p>
+        <p><b>Alternativa más precisa:</b> calcular la posición del sol con una ecuación astronómica
+        según hora, fecha, latitud y longitud (algoritmo <a href="https://midcdmz.nrel.gov/spa/" target="_blank">SPA de NREL</a>).</p>
+      </div>
+
+      <div class="aprende-card">
         <h3>🧪 Experimentos para el club</h3>
         <ul class="lista-bonita">
           <li>Compara la HSP de tu ciudad con la de Mexicali — ¿qué tanto más produce un panel allá?</li>
           <li>Cambia el ángulo de 0° a 90° y observa cómo varía el factor de inclinación</li>
           <li>Usa el modo NASA POWER para descargar datos reales de tu casa o escuela</li>
           <li>Compara dos sistemas: paneles baratos (15%) vs caros (22%) — ¿cuál se paga primero?</li>
+          <li>Cambia el "Tipo de sistema" a Seguidor 1 eje y 2 ejes — ¿cuántos años antes se recupera la inversión?</li>
+          <li>Construye un seguidor real con Arduino y compara la energía medida vs la estimada por la calculadora</li>
         </ul>
       </div>
     </div>
@@ -518,7 +563,7 @@
 
       <div class="formula-box">
         <div class="titulo">Energía diaria del panel</div>
-        <div class="ecuacion">E = A × η × HSP × PR × f<sub>incl</sub></div>
+        <div class="ecuacion">E = A × η × HSP × PR × f<sub>incl</sub> × G<sub>seguidor</sub></div>
       </div>
 
       <div class="variables-grid">
@@ -540,7 +585,11 @@
         </div>
         <div class="variable-item">
           <div class="simbolo">f<sub>incl</sub></div>
-          <div class="desc">cos(|ángulo − latitud|)</div>
+          <div class="desc">cos(|ángulo − latitud|) si es fijo, 1.0 si tiene seguidor</div>
+        </div>
+        <div class="variable-item">
+          <div class="simbolo">G<sub>seguidor</sub></div>
+          <div class="desc">Fijo: 1.00 · 1 eje: 1.27 · 2 ejes: 1.38</div>
         </div>
       </div>
 
@@ -631,6 +680,13 @@ const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov"
 const FACTOR_CO2 = 0.494;
 const CONSUMO_HOGAR = 250;
 
+// Tipos de sistema: ganancia por seguir al sol + factor de costo (informativo)
+const TIPOS_SISTEMA = {
+  "Fijo":              { ganancia: 1.00, costo: 1.00 },
+  "Seguidor 1 eje":    { ganancia: 1.27, costo: 1.25 },
+  "Seguidor 2 ejes":   { ganancia: 1.38, costo: 1.50 }
+};
+
 const C_AZUL = "#1976d2", C_AZUL_OSC = "#1565c0";
 const C_NARANJA = "#ff7043", C_VERDE = "#2e7d32";
 
@@ -645,12 +701,19 @@ function factorInclinacion(ang, lat) {
 function calcular(p) {
   const ef = p.eficiencia / 100;
   const pr = 1 - p.perdidas / 100;
-  const fInc = factorInclinacion(p.angulo, p.latitud);
-  const energiaDiaria = p.area * ef * p.hsp * pr * fInc;
+  const tipo = p.tipoSistema || "Fijo";
+  const ganancia = (TIPOS_SISTEMA[tipo] || TIPOS_SISTEMA["Fijo"]).ganancia;
+
+  // En seguidores el panel siempre está orientado óptimamente
+  const fInc = (tipo === "Fijo")
+    ? factorInclinacion(p.angulo, p.latitud)
+    : 1.0;
+
+  const energiaDiaria = p.area * ef * p.hsp * pr * fInc * ganancia;
   const mensual = [];
   if (p.mensualPersonalizado) {
     for (let i = 0; i < 12; i++) {
-      mensual.push(p.area * ef * p.mensualPersonalizado[i] * pr * fInc * DIAS_MES[i]);
+      mensual.push(p.area * ef * p.mensualPersonalizado[i] * pr * fInc * ganancia * DIAS_MES[i]);
     }
   } else {
     for (let i = 0; i < 12; i++) {
@@ -662,7 +725,16 @@ function calcular(p) {
   const co2 = anual * FACTOR_CO2;
   const payback = ahorro > 0 ? p.costoSistema / ahorro : Infinity;
   const cobertura = (anual / (CONSUMO_HOGAR * 12)) * 100;
-  return { energiaDiaria, mensual, anual, ahorro, co2, payback, cobertura, fInc };
+  return { energiaDiaria, mensual, anual, ahorro, co2, payback, cobertura, fInc, tipo, ganancia };
+}
+
+function compararSistemas(p) {
+  // Calcular los tres sistemas con los mismos parámetros base
+  const out = {};
+  for (const nombre of Object.keys(TIPOS_SISTEMA)) {
+    out[nombre] = calcular({ ...p, tipoSistema: nombre });
+  }
+  return out;
 }
 
 // =================================================================
@@ -786,8 +858,9 @@ function leerParametros() {
     mensualPersonalizado = nasaCache.mensual;
     etiqueta = `NASA POWER (${nasaCache.lat.toFixed(2)}, ${nasaCache.lon.toFixed(2)})`;
   }
+  const tipoSistema = document.getElementById("tipo-sistema").value;
   return { ciudad: etiqueta, hsp, latitud, area, eficiencia, angulo,
-           perdidas, precioKwh: precio, costoSistema: costo, mensualPersonalizado };
+           perdidas, precioKwh: precio, costoSistema: costo, mensualPersonalizado, tipoSistema };
 }
 
 function fmtMoneda(v) { return "$" + Math.round(v).toLocaleString("es-MX"); }
@@ -807,6 +880,7 @@ document.getElementById("btn-limpiar").addEventListener("click", () => {
     document.getElementById(id).value = [10,20,20,20][i]);
   document.getElementById("precio").value = 3.50;
   document.getElementById("costo").value = 60000;
+  document.getElementById("tipo-sistema").value = "Fijo";
   ultimoResultado = null;
   ["r-anual","r-ahorro","r-co2","r-payback"].forEach(id =>
     document.getElementById(id).textContent = "—");
@@ -826,7 +900,51 @@ function actualizarUI(p, r) {
   graficarMensual(p, r);
   graficarAhorro(p, r);
   graficarConsumo(p, r);
+  graficarSeguidor(p, r);
   tablaDetalle(p, r);
+}
+
+function graficarSeguidor(p, r) {
+  destruirSi("seguidor");
+  const comp = compararSistemas(p);
+  const nombres = Object.keys(comp);
+  const anuales = nombres.map(n => Math.round(comp[n].anual));
+  const ahorros = nombres.map(n => comp[n].ahorro);
+  const colores = [C_AZUL, C_NARANJA, C_VERDE];
+
+  const ctx = document.getElementById("chart-seguidor").getContext("2d");
+  charts.seguidor = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: nombres,
+      datasets: [{
+        label: "kWh / año",
+        data: anuales,
+        backgroundColor: colores,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        title: { display: true,
+                 text: "Producción anual: Fijo vs Seguidores solares",
+                 font: { size: 14, weight: "bold" }, color: "#424242" },
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterLabel: (ctx) => {
+              const i = ctx.dataIndex;
+              const pct = i === 0 ? "" : ` (+${Math.round((anuales[i]/anuales[0]-1)*100)}%)`;
+              return `Ahorro: ${fmtMoneda(ahorros[i])}/año${pct}`;
+            }
+          }
+        }
+      },
+      scales: { y: { beginAtZero: true,
+                     title: { display: true, text: "kWh / año", color: "#757575" } } }
+    }
+  });
 }
 
 function destruirSi(key) {
