@@ -4,7 +4,7 @@
 
 Calculadora educativa que estima cuánta energía produciría un sistema fotovoltaico según ubicación, área de paneles, eficiencia, inclinación y pérdidas del sistema. Incluye datos reales de 18 ciudades de México, integración con la API de **NASA POWER** y gráficas de producción mensual, ahorro económico y comparativa contra el consumo de un hogar promedio.
 
-🌐 **Versión web (úsala en celular o computadora):** [Abrir calculadora](https://USUARIO.github.io/calculadora-energia-solar/)
+🌐 **Versión web (úsala en celular o computadora):** [Abrir calculadora](https://cesar687.github.io/calculadora-energia-solar/)
 
 > Reemplaza `USUARIO` con tu nombre de usuario de GitHub después de habilitar Pages.
 
