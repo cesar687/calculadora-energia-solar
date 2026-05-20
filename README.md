@@ -11,8 +11,6 @@ Calculadora educativa que estima cuánta energía produciría un sistema fotovol
 
 🌐 **Versión web (úsala en celular o computadora):** [Abrir calculadora](https://cesar687.github.io/calculadora-energia-solar/))
 
-> Reemplaza `USUARIO` con tu nombre de usuario de GitHub después de habilitar Pages.
-
 ---
 
 ## Características
