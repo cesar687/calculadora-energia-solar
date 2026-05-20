@@ -378,8 +378,81 @@
           <input type="number" id="perdidas" value="20" step="1" min="0" max="50">
 
           <h3>💰 Economía</h3>
-          <label for="precio">Precio de la luz ($/kWh)</label>
-          <input type="number" id="precio" value="3.50" step="0.1">
+          <label>Modo de facturación</label>
+          <div class="submodos" style="margin-top:0;">
+            <button type="button" class="submodo-btn active" data-fact="simple">Precio único</button>
+            <button type="button" class="submodo-btn" data-fact="cfe">🇲🇽 Tarifa CFE</button>
+          </div>
+
+          <div class="submodo-grupo active" id="fact-simple" style="margin-top:8px;">
+            <label for="precio">Precio de la luz ($/kWh)</label>
+            <input type="number" id="precio" value="3.50" step="0.1">
+          </div>
+
+          <div class="submodo-grupo" id="fact-cfe" style="margin-top:8px;">
+            <label for="tarifa-cfe">Tarifa CFE</label>
+            <select id="tarifa-cfe">
+              <option value="1" selected>Tarifa 1 (templada)</option>
+              <option value="1A">Tarifa 1A (≥25 °C)</option>
+              <option value="1B">Tarifa 1B (≥28 °C)</option>
+              <option value="1C">Tarifa 1C (≥30 °C)</option>
+              <option value="1D">Tarifa 1D (≥31 °C)</option>
+              <option value="1E">Tarifa 1E (≥32 °C)</option>
+              <option value="1F">Tarifa 1F (≥33 °C, Mexicali)</option>
+              <option value="DAC">DAC (Alto Consumo)</option>
+              <option value="PDBT">PDBT (Comercial &lt; 25 kW)</option>
+            </select>
+            <label for="consumo-mes">Consumo promedio (kWh/mes)</label>
+            <input type="number" id="consumo-mes" value="250" step="10" min="0">
+
+            <!-- Toggle: usar historial anual del recibo -->
+            <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px;">
+              <input type="checkbox" id="usar-historial"
+                     style="width:18px; min-height:18px; margin:0;">
+              <span style="margin-top:0;">📊 Usar historial anual del recibo CFE (12 meses)</span>
+            </label>
+
+            <div id="campos-historial" style="display:none; margin-top:10px; padding:12px; background:#f5f5f5; border-radius:8px;">
+              <p style="font-size:12px; color:#1976d2; margin:0 0 8px; font-style:italic;">
+                Ingresa el consumo (kWh) de cada mes desde tu recibo. Puedes pegar el bloque
+                completo del PDF y se autodetectan los números.
+              </p>
+              <textarea id="historial-paste"
+                        placeholder="Pega aquí el bloque del recibo o escribe 12 números separados por espacios/saltos de línea&#10;Ej: 423 686 1373 1808 493 713 373 235 153 187 232 352"
+                        rows="3"
+                        style="width:100%; padding:8px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; font-family:monospace;"></textarea>
+              <button id="btn-parse-historial" type="button" class="secundario"
+                      style="margin-top:6px; width:100%;">📥 Detectar 12 meses del texto</button>
+
+              <div id="grid-meses" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:10px;">
+                <!-- 12 inputs generados por JS -->
+              </div>
+              <p id="historial-status" style="font-size:11px; color:#757575; margin-top:6px; text-align:center;"></p>
+            </div>
+
+            <!-- Campos editables sólo para PDBT -->
+            <div id="campos-pdbt" style="display:none; margin-top:10px; padding:10px; background:#f5f5f5; border-radius:8px;">
+              <p style="font-size:12px; font-style:italic; color:#1976d2; margin:0 0 6px;">
+                ↓ Personaliza con los datos de tu recibo:
+              </p>
+              <label for="pdbt-precio" style="margin-top:6px;">Precio por kWh ($)</label>
+              <input type="number" id="pdbt-precio" value="5.00" step="0.01" min="0">
+              <label for="pdbt-cargo">Cargo fijo mensual ($)</label>
+              <input type="number" id="pdbt-cargo" value="70" step="1" min="0">
+            </div>
+          </div>
+
+          <label style="display:flex; align-items:center; gap:8px; margin-top:14px; font-size:13px;">
+            <input type="checkbox" id="auto-costo" checked
+                   style="width:18px; min-height:18px; margin:0;">
+            <span style="margin-top:0;">Auto-calcular costo según área</span>
+          </label>
+
+          <label for="costo-fijo">Costo fijo (inversor, instalación) $</label>
+          <input type="number" id="costo-fijo" value="15000" step="500" min="0">
+          <label for="costo-m2">Costo por m² (paneles + estructura) $</label>
+          <input type="number" id="costo-m2" value="4500" step="100" min="0">
+
           <label for="costo">Costo del sistema ($)</label>
           <input type="number" id="costo" value="60000" step="1000">
 
@@ -421,6 +494,7 @@
             <button class="submodo-btn" data-grafica="ahorro">Ahorro 20 años</button>
             <button class="submodo-btn" data-grafica="consumo">vs Hogar</button>
             <button class="submodo-btn" data-grafica="seguidor">🔁 Seguidor</button>
+            <button class="submodo-btn" data-grafica="cfe">🇲🇽 CFE</button>
             <button class="submodo-btn" data-grafica="detalle">Detalle</button>
           </div>
 
@@ -435,6 +509,13 @@
           </div>
           <div class="submodo-grupo" id="grafica-seguidor">
             <div class="grafica-wrap"><canvas id="chart-seguidor"></canvas></div>
+          </div>
+          <div class="submodo-grupo" id="grafica-cfe">
+            <div id="cfe-contenido" style="padding:8px 4px;">
+              <p style="color:#9e9e9e; font-style:italic; text-align:center; padding:30px;">
+                Selecciona <b>Tarifa CFE</b> en el modo de facturación y calcula para ver el desglose.
+              </p>
+            </div>
           </div>
           <div class="submodo-grupo" id="grafica-detalle">
             <table id="tabla-detalle">
@@ -543,6 +624,65 @@
       </div>
 
       <div class="aprende-card">
+        <h3>🇲🇽 El "acantilado DAC" — clave para México</h3>
+        <p>CFE clasifica a los hogares en 8 tarifas según el clima local. Cada tarifa tiene un
+        <b>límite de alto consumo</b> mensual. Si el promedio anual lo rebasa, te reclasifican
+        como <b>DAC</b> (Doméstica de Alto Consumo) y pierdes todo subsidio: pagas ~$6/kWh
+        sobre todos tus kWh, no solo los excedentes.</p>
+        <p>Ejemplo en Tarifa 1 (templada, límite 250 kWh/mes):</p>
+        <ul class="lista-bonita">
+          <li>Consumo 200 kWh/mes (normal): factura ~$350/mes</li>
+          <li>Consumo 400 kWh/mes → entra en DAC: factura ~$2,500/mes (6×)</li>
+        </ul>
+        <p><b>Por qué importa para solar:</b> si un sistema solar reduce el consumo neto por debajo
+        del límite, el hogar <i>sale de DAC</i> y el ahorro real es mucho mayor que el simple
+        "kWh × precio". La calculadora modela esto si seleccionas modo "Tarifa CFE".</p>
+      </div>
+
+      <div class="aprende-card" style="border-left-color:#2e7d32;">
+        <h3 style="color:#2e7d32;">💼 Caso de estudio real — Negocio en Hermosillo (PDBT)</h3>
+        <p>Hermosillo es una de las ciudades con <b>mejor recurso solar de México</b>
+        (HSP = 6.00 kWh/m²/día). Combinado con la tarifa comercial <b>PDBT</b>
+        (~$5.00/kWh sin subsidio), el payback de un sistema solar es muy corto.</p>
+
+        <p><b>Escenario:</b> pequeño negocio con consumo de ~1,000 kWh/mes,
+        latitud 29.1°, panel a 30°, 20% eficiencia, pérdidas 20%, precio luz $5.00/kWh.</p>
+
+        <table style="width:100%; margin-top:10px; font-size:13px;">
+          <thead>
+            <tr>
+              <th style="background:#2e7d32;">Sistema</th>
+              <th style="background:#2e7d32;">kWh/año</th>
+              <th style="background:#2e7d32;">Ahorro/año</th>
+              <th style="background:#2e7d32;">Costo</th>
+              <th style="background:#2e7d32;">Payback</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>20 m² Fijo</td><td>6,964</td><td>$34,818</td><td>$105,000</td><td><b>3.0 años</b></td></tr>
+            <tr><td>30 m² Fijo</td><td>10,445</td><td>$52,227</td><td>$150,000</td><td><b>2.9 años</b></td></tr>
+            <tr><td>50 m² Fijo</td><td>17,409</td><td>$87,044</td><td>$240,000</td><td><b>2.8 años</b></td></tr>
+            <tr><td>30 m² Seguidor 1 eje</td><td>13,267</td><td>$66,336</td><td>$187,500</td><td><b>2.8 años</b></td></tr>
+            <tr><td>30 m² Seguidor 2 ejes</td><td>14,416</td><td>$72,082</td><td>$225,000</td><td><b>3.1 años</b></td></tr>
+          </tbody>
+        </table>
+
+        <p style="margin-top:12px;"><b>Conclusiones:</b></p>
+        <ul class="lista-bonita">
+          <li>El payback en Hermosillo con PDBT es <b>menor a 3 años</b> en casi todos los escenarios</li>
+          <li>Con paneles fijos bien orientados (ángulo ≈ latitud) ya se obtiene un rendimiento excelente</li>
+          <li>El seguidor de 1 eje da el mismo payback que fijo pero produce 27% más energía total</li>
+          <li>El seguidor de 2 ejes tiene mejor producción absoluta, pero el extra costo alarga el payback</li>
+          <li>Después del payback (~3 años), el panel sigue funcionando 22–27 años más = <b>ganancia neta</b></li>
+        </ul>
+
+        <p style="background:#e8f5e9; padding:12px; border-radius:6px; margin-top:12px;">
+        💡 <b>Tip:</b> Para replicar este caso en la calculadora, elige ciudad "Hermosillo, SON",
+        modo facturación "Precio único" con $5.00/kWh, y ajusta el área en la sección Panel solar.
+        </p>
+      </div>
+
+      <div class="aprende-card">
         <h3>🧪 Experimentos para el club</h3>
         <ul class="lista-bonita">
           <li>Compara la HSP de tu ciudad con la de Mexicali — ¿qué tanto más produce un panel allá?</li>
@@ -613,7 +753,13 @@
         <li><b>Datos satelitales globales:</b> <a href="https://power.larc.nasa.gov" target="_blank">NASA POWER</a> — parámetro <code>ALLSKY_SFC_SW_DWN</code>.</li>
         <li><b>Factor de emisión CO₂:</b> CRE — Factor de Emisión del Sistema Eléctrico Nacional 2023 (0.494 kg CO₂/kWh).</li>
         <li><b>Consumo del hogar:</b> CFE — ~250 kWh/mes (tarifa doméstica básica).</li>
+        <li><b>Tarifas CFE:</b> <a href="https://app.cfe.mx/aplicaciones/ccfe/tarifas/tarifas/Tarifas.asp" target="_blank">app.cfe.mx</a> — precios y bloques por tarifa (1, 1A-1F, DAC). CFE ajusta los precios cada mes.</li>
       </ul>
+      <div class="cita">
+        <b>⚠ Precios CFE referenciales:</b> los valores incluidos en la calculadora son
+        representativos del periodo 2024–2025. Para uso profesional, actualízalos cada mes
+        consultando el portal oficial de CFE.
+      </div>
     </div>
 
     <div class="card">
@@ -686,6 +832,143 @@ const TIPOS_SISTEMA = {
   "Seguidor 1 eje":    { ganancia: 1.27, costo: 1.25 },
   "Seguidor 2 ejes":   { ganancia: 1.38, costo: 1.50 }
 };
+
+// Costo del sistema fotovoltaico (precios México 2024–2025)
+const COSTO_FIJO_DEFAULT = 15000;   // MXN: inversor + cableado + instalación
+const COSTO_POR_M2_DEFAULT = 4500;  // MXN/m²: paneles + estructura
+
+function calcularCostoSistema(area, tipoSistema, costoFijo = COSTO_FIJO_DEFAULT,
+                              costoPorM2 = COSTO_POR_M2_DEFAULT) {
+  const mult = (TIPOS_SISTEMA[tipoSistema] || TIPOS_SISTEMA["Fijo"]).costo;
+  return (costoFijo + area * costoPorM2) * mult;
+}
+
+// =================================================================
+//  Tarifas CFE (México) — referenciales 2024-2025
+//  Precios cambian mensualmente. Actualizar desde app.cfe.mx
+// =================================================================
+const TARIFAS_CFE = {
+  "1": {
+    nombre: "Tarifa 1 (templada)",
+    mesesVerano: [],
+    bloques: [[75, 0.953], [140, 1.153], [Infinity, 3.378]],
+    limiteDacMes: 250, cargoFijo: 0
+  },
+  "1A": {
+    nombre: "Tarifa 1A (≥25 °C)",
+    mesesVerano: [4,5,6,7,8,9],
+    bloquesVerano:   [[100, 0.812], [150, 0.991], [Infinity, 2.971]],
+    bloquesInvierno: [[75,  0.812], [140, 0.991], [Infinity, 2.971]],
+    limiteDacMes: 300, cargoFijo: 0
+  },
+  "1B": {
+    nombre: "Tarifa 1B (≥28 °C)",
+    mesesVerano: [4,5,6,7,8,9,10],
+    bloquesVerano:   [[125, 0.776], [225, 0.948], [Infinity, 2.795]],
+    bloquesInvierno: [[75,  0.776], [140, 0.948], [Infinity, 2.795]],
+    limiteDacMes: 400, cargoFijo: 0
+  },
+  "1C": {
+    nombre: "Tarifa 1C (≥30 °C)",
+    mesesVerano: [4,5,6,7,8,9,10,11],
+    bloquesVerano:   [[150, 0.703], [300, 0.860], [450, 1.106], [Infinity, 2.795]],
+    bloquesInvierno: [[75,  0.703], [140, 0.860], [Infinity, 2.795]],
+    limiteDacMes: 850, cargoFijo: 0
+  },
+  "1D": {
+    nombre: "Tarifa 1D (≥31 °C)",
+    mesesVerano: [4,5,6,7,8,9,10,11],
+    bloquesVerano:   [[175, 0.703], [400, 0.860], [600, 1.106], [Infinity, 2.795]],
+    bloquesInvierno: [[75,  0.703], [140, 0.860], [Infinity, 2.795]],
+    limiteDacMes: 1000, cargoFijo: 0
+  },
+  "1E": {
+    nombre: "Tarifa 1E (≥32 °C)",
+    mesesVerano: [4,5,6,7,8,9,10,11],
+    bloquesVerano:   [[300, 0.578], [750, 0.752], [900, 1.106], [Infinity, 2.795]],
+    bloquesInvierno: [[75,  0.578], [140, 0.752], [Infinity, 2.795]],
+    limiteDacMes: 2000, cargoFijo: 0
+  },
+  "1F": {
+    nombre: "Tarifa 1F (≥33 °C)",
+    mesesVerano: [4,5,6,7,8,9,10,11],
+    bloquesVerano:   [[300, 0.578], [1200, 0.752], [2500, 1.106], [Infinity, 2.795]],
+    bloquesInvierno: [[75,  0.578], [140,  0.752], [Infinity, 2.795]],
+    limiteDacMes: 2500, cargoFijo: 0
+  },
+  "DAC": {
+    nombre: "DAC (Alto Consumo)",
+    mesesVerano: [],
+    bloques: [[Infinity, 6.069]],
+    limiteDacMes: Infinity, cargoFijo: 109.95
+  },
+  "PDBT": {
+    // Pequeña Demanda en Baja Tensión (comercial < 25 kW)
+    // Tarifa única por kWh + cargo fijo. No tiene DAC.
+    // Valor promedio región Noroeste 2024 (varía cada mes; ajusta con tu recibo).
+    nombre: "PDBT (Comercial < 25 kW)",
+    mesesVerano: [],
+    bloques: [[Infinity, 5.00]],
+    limiteDacMes: Infinity, cargoFijo: 70.00
+  }
+};
+
+function costoFacturaMes(consumoKwh, tarifa, mes) {
+  const info = TARIFAS_CFE[tarifa];
+  let bloques;
+  if (info.mesesVerano.includes(mes) && info.bloquesVerano) {
+    bloques = info.bloquesVerano;
+  } else if (info.bloquesInvierno) {
+    bloques = info.bloquesInvierno;
+  } else {
+    bloques = info.bloques;
+  }
+  let costo = 0, restante = Math.max(0, consumoKwh), prev = 0;
+  for (const [lim, precio] of bloques) {
+    const kwh = Math.min(restante, lim - prev);
+    if (kwh <= 0) break;
+    costo += kwh * precio;
+    restante -= kwh;
+    prev = lim;
+  }
+  return costo + (info.cargoFijo || 0);
+}
+
+function evaluarDac(consumoAnual, tarifa) {
+  if (tarifa === "DAC") return true;
+  return (consumoAnual / 12) > TARIFAS_CFE[tarifa].limiteDacMes;
+}
+
+function simularFacturaAnual(consumoMensual, produccionMensual, tarifa) {
+  const consumoAnual = consumoMensual.reduce((a,b) => a+b, 0);
+  const dacAntes = evaluarDac(consumoAnual, tarifa);
+  const tarifaAntes = dacAntes ? "DAC" : tarifa;
+  let facturaAntes = 0;
+  for (let m = 0; m < 12; m++) {
+    facturaAntes += costoFacturaMes(consumoMensual[m], tarifaAntes, m+1);
+  }
+  const consumoNeto = consumoMensual.map((c,i) => Math.max(0, c - produccionMensual[i]));
+  const consumoNetoAnual = consumoNeto.reduce((a,b) => a+b, 0);
+  const dacDespues = evaluarDac(consumoNetoAnual, tarifa);
+  const tarifaDespues = dacDespues ? "DAC" : tarifa;
+  let facturaDespues = 0;
+  for (let m = 0; m < 12; m++) {
+    facturaDespues += costoFacturaMes(consumoNeto[m], tarifaDespues, m+1);
+  }
+  const ahorro = facturaAntes - facturaDespues;
+  const produccionAnual = produccionMensual.reduce((a,b) => a+b, 0);
+  return {
+    facturaSinSolar: facturaAntes,
+    facturaConSolar: facturaDespues,
+    ahorroAnualReal: ahorro,
+    dacAntes, dacDespues,
+    tarifaAplicadaAntes: tarifaAntes,
+    tarifaAplicadaDespues: tarifaDespues,
+    consumoNetoMensual: consumoNeto,
+    precioEfectivoKwh: produccionAnual > 0 ? ahorro / produccionAnual : 0,
+    consumoAnual, produccionAnual
+  };
+}
 
 const C_AZUL = "#1976d2", C_AZUL_OSC = "#1565c0";
 const C_NARANJA = "#ff7043", C_VERDE = "#2e7d32";
@@ -760,6 +1043,16 @@ document.querySelectorAll(".submodo-btn[data-modo]").forEach(btn => {
   });
 });
 
+// Sub-modo de facturación: simple vs CFE
+document.querySelectorAll(".submodo-btn[data-fact]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".submodo-btn[data-fact]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".submodo-grupo[id^='fact-']").forEach(g => g.classList.remove("active"));
+    document.getElementById("fact-" + btn.dataset.fact).classList.add("active");
+  });
+});
+
 // Sub-pestañas de gráficas
 document.querySelectorAll(".submodo-btn[data-grafica]").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -826,6 +1119,170 @@ async function descargarNasa() {
 }
 document.getElementById("btn-nasa").addEventListener("click", descargarNasa);
 
+// =================================================================
+//  Historial anual CFE: 12 meses reales del recibo
+// =================================================================
+(function() {
+  const grid = document.getElementById("grid-meses");
+  if (!grid) return;
+  // Generar 12 inputs Ene-Dic
+  for (let i = 0; i < 12; i++) {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <label style="font-size:11px; color:#757575; margin:0; display:block;">${MESES[i]}</label>
+      <input type="number" id="mes-${i}" value="" step="10" min="0"
+             style="width:100%; padding:6px 8px; font-size:13px; border:1px solid #e0e0e0;
+                    border-radius:4px; min-height:auto;">`;
+    grid.appendChild(wrap);
+  }
+})();
+
+function obtenerHistorialMensual() {
+  // Devuelve array de 12 números o null si no está completo/válido
+  if (!document.getElementById("usar-historial").checked) return null;
+  const vals = [];
+  for (let i = 0; i < 12; i++) {
+    const v = parseFloat(document.getElementById(`mes-${i}`).value);
+    if (isNaN(v) || v < 0) return null;
+    vals.push(v);
+  }
+  return vals;
+}
+
+function toggleHistorial() {
+  const usar = document.getElementById("usar-historial").checked;
+  document.getElementById("campos-historial").style.display = usar ? "block" : "none";
+  document.getElementById("consumo-mes").disabled = usar;
+  document.getElementById("consumo-mes").style.background = usar ? "#f0f0f0" : "white";
+}
+document.getElementById("usar-historial").addEventListener("change", toggleHistorial);
+
+function parsearHistorial() {
+  // Acepta el bloque del recibo CFE en cualquier orden y reordena a Ene-Dic
+  const texto = document.getElementById("historial-paste").value;
+  const status = document.getElementById("historial-status");
+
+  // Mapa de nombres de mes (incluye variantes con/sin acento)
+  const NOM_MES = {
+    "ENE": 0, "FEB": 1, "MAR": 2, "ABR": 3, "MAY": 4, "JUN": 5,
+    "JUL": 6, "AGO": 7, "SEP": 8, "OCT": 9, "NOV": 10, "DIC": 11
+  };
+
+  // Estrategia 1: buscar pares (nombre_mes, kWh) línea por línea
+  const lineas = texto.split(/[\r\n]+/);
+  const porMes = new Array(12).fill(null);
+  let encontrados = 0;
+
+  for (const linea of lineas) {
+    const upper = linea.toUpperCase();
+    // Buscar nombre de mes en la línea
+    const matchMes = upper.match(/\b(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\b/);
+    if (!matchMes) continue;
+    const idx = NOM_MES[matchMes[1]];
+
+    // Buscar el primer número grande (>= 50, < 100000) en la línea — es el kWh
+    const nums = (linea.match(/\d{1,5}(?:[,]\d{3})*(?:\.\d+)?/g) || [])
+      .map(s => parseFloat(s.replace(/,/g, "")))
+      .filter(n => n >= 50 && n < 100000)
+      .filter(n => !(n >= 20 && n <= 30 && Number.isInteger(n)));
+    if (nums.length === 0) continue;
+
+    // El primer número grande es el kWh del mes
+    if (porMes[idx] === null) {
+      porMes[idx] = nums[0];
+      encontrados++;
+    }
+  }
+
+  // Si la estrategia 1 detectó 12 meses con etiquetas, perfecto
+  if (encontrados === 12) {
+    porMes.forEach((v, i) => { document.getElementById(`mes-${i}`).value = v; });
+    const total = porMes.reduce((a, b) => a + b, 0);
+    status.textContent = `✓ 12 meses cargados con etiquetas. Total: ${fmtNum(total)} kWh (prom. ${(total/12).toFixed(0)} kWh/mes)`;
+    status.style.color = "#2e7d32";
+    return;
+  }
+
+  // Estrategia 2: si no hubo etiquetas, tomar los primeros 12 números válidos
+  // y asumir orden Ene-Dic
+  const matches = texto.match(/\d{1,5}(?:[,]\d{3})*(?:\.\d+)?/g) || [];
+  const valores = matches
+    .map(s => parseFloat(s.replace(/,/g, "")))
+    .filter(n => n >= 10 && n < 100000)
+    .filter(n => !(n >= 20 && n <= 30 && Number.isInteger(n)));
+
+  if (valores.length < 12) {
+    status.textContent = `⚠ Sólo encontré ${valores.length} números válidos. Necesito 12.`;
+    status.style.color = "#c62828";
+    return;
+  }
+  const meses = valores.slice(0, 12);
+  meses.forEach((v, i) => { document.getElementById(`mes-${i}`).value = v; });
+  const total = meses.reduce((a, b) => a + b, 0);
+  status.textContent = `✓ 12 valores cargados (asumiendo orden Ene→Dic). Total: ${fmtNum(total)} kWh. Verifica los meses arriba.`;
+  status.style.color = "#f57c00";
+}
+document.getElementById("btn-parse-historial").addEventListener("click", parsearHistorial);
+
+// =================================================================
+//  PDBT editable: mostrar campos y aplicar valores del recibo
+// =================================================================
+function actualizarCamposPdbt() {
+  const tarifa = document.getElementById("tarifa-cfe").value;
+  const div = document.getElementById("campos-pdbt");
+  if (div) div.style.display = (tarifa === "PDBT") ? "block" : "none";
+}
+function aplicarValoresPdbt() {
+  // Si la tarifa seleccionada es PDBT, sobreescribir precio/cargo en TARIFAS_CFE
+  // Se aplica siempre que haya PDBT seleccionada (independiente del modo activo)
+  const tarSel = document.getElementById("tarifa-cfe");
+  if (!tarSel || tarSel.value !== "PDBT") return;
+
+  const precio = parseFloat(document.getElementById("pdbt-precio").value);
+  const cargo = parseFloat(document.getElementById("pdbt-cargo").value);
+  if (isNaN(precio) || isNaN(cargo) || precio < 0 || cargo < 0) return;
+
+  TARIFAS_CFE["PDBT"].bloques = [[Infinity, precio]];
+  TARIFAS_CFE["PDBT"].cargoFijo = cargo;
+}
+// Mostrar/ocultar al cambiar la tarifa
+const _tarSel = document.getElementById("tarifa-cfe");
+if (_tarSel) _tarSel.addEventListener("change", actualizarCamposPdbt);
+actualizarCamposPdbt();
+
+// =================================================================
+//  Auto-cálculo del costo del sistema
+// =================================================================
+function actualizarCostoAuto() {
+  const auto = document.getElementById("auto-costo").checked;
+  const inputCosto = document.getElementById("costo");
+
+  if (!auto) {
+    inputCosto.readOnly = false;
+    inputCosto.style.background = "white";
+    return;
+  }
+  inputCosto.readOnly = true;
+  inputCosto.style.background = "#f5f5f5";
+
+  const area = parseFloat(document.getElementById("area").value);
+  const fijo = parseFloat(document.getElementById("costo-fijo").value);
+  const m2 = parseFloat(document.getElementById("costo-m2").value);
+  const tipo = document.getElementById("tipo-sistema").value;
+  if (isNaN(area) || isNaN(fijo) || isNaN(m2)) return;
+
+  inputCosto.value = Math.round(calcularCostoSistema(area, tipo, fijo, m2));
+}
+
+// Disparar el auto-cálculo en cambios relevantes
+["area","tipo-sistema","costo-fijo","costo-m2","auto-costo"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", actualizarCostoAuto);
+  if (el) el.addEventListener("change", actualizarCostoAuto);
+});
+// Inicializar
+actualizarCostoAuto();
+
 // Leer parámetros y validar
 function leerParametros() {
   const modoBtn = document.querySelector(".submodo-btn[data-modo].active");
@@ -859,8 +1316,21 @@ function leerParametros() {
     etiqueta = `NASA POWER (${nasaCache.lat.toFixed(2)}, ${nasaCache.lon.toFixed(2)})`;
   }
   const tipoSistema = document.getElementById("tipo-sistema").value;
+
+  // Modo de facturación
+  const modoFactBtn = document.querySelector(".submodo-btn[data-fact].active");
+  const modoFact = modoFactBtn ? modoFactBtn.dataset.fact : "simple";
+  let tarifaCfe = null, consumoMensualKwh = null;
+  if (modoFact === "cfe") {
+    tarifaCfe = document.getElementById("tarifa-cfe").value;
+    consumoMensualKwh = parseFloat(document.getElementById("consumo-mes").value);
+    if (isNaN(consumoMensualKwh) || consumoMensualKwh < 0)
+      throw new Error("Consumo CFE debe ser un número ≥ 0.");
+  }
+
   return { ciudad: etiqueta, hsp, latitud, area, eficiencia, angulo,
-           perdidas, precioKwh: precio, costoSistema: costo, mensualPersonalizado, tipoSistema };
+           perdidas, precioKwh: precio, costoSistema: costo, mensualPersonalizado, tipoSistema,
+           modoFact, tarifaCfe, consumoMensualKwh };
 }
 
 function fmtMoneda(v) { return "$" + Math.round(v).toLocaleString("es-MX"); }
@@ -868,6 +1338,7 @@ function fmtNum(v, d=0) { return v.toLocaleString("es-MX", {maximumFractionDigit
 
 document.getElementById("btn-calcular").addEventListener("click", () => {
   try {
+    aplicarValoresPdbt();   // si PDBT, usar precio/cargo del recibo
     const p = leerParametros();
     const r = calcular(p);
     ultimoResultado = r; ultimosParametros = p;
@@ -879,8 +1350,11 @@ document.getElementById("btn-limpiar").addEventListener("click", () => {
   ["area","eficiencia","angulo","perdidas"].forEach((id,i) =>
     document.getElementById(id).value = [10,20,20,20][i]);
   document.getElementById("precio").value = 3.50;
-  document.getElementById("costo").value = 60000;
+  document.getElementById("costo-fijo").value = 15000;
+  document.getElementById("costo-m2").value = 4500;
+  document.getElementById("auto-costo").checked = true;
   document.getElementById("tipo-sistema").value = "Fijo";
+  actualizarCostoAuto();
   ultimoResultado = null;
   ["r-anual","r-ahorro","r-co2","r-payback"].forEach(id =>
     document.getElementById(id).textContent = "—");
@@ -891,6 +1365,18 @@ document.getElementById("btn-limpiar").addEventListener("click", () => {
 });
 
 function actualizarUI(p, r) {
+  // Si está en modo CFE, sustituir ahorro y payback por los reales
+  let factCfe = null;
+  if (p.modoFact === "cfe") {
+    // Usar historial real si está disponible, si no usar el promedio mensual
+    const historial = obtenerHistorialMensual();
+    const consumoMensual = historial || Array(12).fill(p.consumoMensualKwh);
+    p.consumoMensualArr = consumoMensual;  // para usar en la tabla
+    factCfe = simularFacturaAnual(consumoMensual, r.mensual, p.tarifaCfe);
+    r.ahorro = factCfe.ahorroAnualReal;
+    r.payback = r.ahorro > 0 ? p.costoSistema / r.ahorro : Infinity;
+  }
+
   document.getElementById("r-anual").textContent = fmtNum(r.anual) + " kWh";
   document.getElementById("r-ahorro").textContent = fmtMoneda(r.ahorro);
   document.getElementById("r-co2").textContent = fmtNum(r.co2) + " kg";
@@ -901,7 +1387,98 @@ function actualizarUI(p, r) {
   graficarAhorro(p, r);
   graficarConsumo(p, r);
   graficarSeguidor(p, r);
+  renderizarCfe(p, r, factCfe);
   tablaDetalle(p, r);
+}
+
+function renderizarCfe(p, r, factCfe) {
+  const cont = document.getElementById("cfe-contenido");
+  if (!factCfe) {
+    cont.innerHTML = `<p style="color:#9e9e9e; font-style:italic; text-align:center; padding:30px;">
+      Selecciona <b>Tarifa CFE</b> en el modo de facturación y calcula para ver el desglose.
+    </p>`;
+    return;
+  }
+
+  const info = TARIFAS_CFE[p.tarifaCfe];
+  let alertaDac = "";
+  if (factCfe.dacAntes && !factCfe.dacDespues) {
+    alertaDac = `<div class="cita" style="background:#E8F5E9; border-color:#2e7d32;">
+      ✅ <b>Antes</b> de solar: en DAC ($6.07/kWh). <b>Con solar SALE de DAC</b> y vuelve a tarifa normal — esto multiplica el ahorro.
+    </div>`;
+  } else if (factCfe.dacAntes && factCfe.dacDespues) {
+    alertaDac = `<div class="cita">
+      ⚠ El sistema no es suficiente para salir de DAC. Considera más paneles o reducir consumo.
+    </div>`;
+  } else if (!factCfe.dacAntes && factCfe.dacDespues) {
+    alertaDac = `<div class="cita">⚠ Después de solar entras en DAC. Revisa el cálculo.</div>`;
+  }
+
+  // Tarjetas comparativas
+  let html = `
+    <h3 style="color:#1976d2; margin-bottom:6px;">💡 Análisis con ${info.nombre}</h3>
+    <p style="color:#757575; font-size:13px; margin-bottom:12px;">
+      Consumo: ${p.consumoMensualKwh.toFixed(0)} kWh/mes ·
+      Producción solar: ${(factCfe.produccionAnual/12).toFixed(0)} kWh/mes
+    </p>
+    ${alertaDac}
+    <div class="tarjetas-resumen" style="margin-top:12px;">
+      <div class="resumen-mini" style="border-left-color:#E74C3C;">
+        <div class="lbl">Sin solar</div>
+        <div class="val">${fmtMoneda(factCfe.facturaSinSolar)}</div>
+        <div style="font-size:11px; color:#757575;">Tarifa: ${factCfe.tarifaAplicadaAntes}</div>
+      </div>
+      <div class="resumen-mini verde">
+        <div class="lbl">Con solar</div>
+        <div class="val">${fmtMoneda(factCfe.facturaConSolar)}</div>
+        <div style="font-size:11px; color:#757575;">Tarifa: ${factCfe.tarifaAplicadaDespues}</div>
+      </div>
+      <div class="resumen-mini">
+        <div class="lbl">Ahorro real</div>
+        <div class="val">${fmtMoneda(factCfe.ahorroAnualReal)}</div>
+        <div style="font-size:11px; color:#757575;">por año</div>
+      </div>
+      <div class="resumen-mini naranja">
+        <div class="lbl">$/kWh efectivo</div>
+        <div class="val">$${factCfe.precioEfectivoKwh.toFixed(2)}</div>
+        <div style="font-size:11px; color:#757575;">por cada kWh evitado</div>
+      </div>
+    </div>
+
+    <h3 style="color:#1976d2; margin-top:18px; margin-bottom:8px;">Desglose mensual</h3>
+    <div style="overflow-x:auto;">
+    <table style="font-size:12px;">
+      <thead><tr>
+        <th>Mes</th><th>Consumo</th><th>Solar</th><th>Neto</th>
+        <th>Sin solar</th><th>Con solar</th><th>Ahorro</th>
+      </tr></thead><tbody>
+  `;
+
+  const tarifaA = factCfe.tarifaAplicadaAntes;
+  const tarifaD = factCfe.tarifaAplicadaDespues;
+  for (let m = 0; m < 12; m++) {
+    // Usar consumo del mes real si está disponible, si no el promedio
+    const cm = (p.consumoMensualArr ? p.consumoMensualArr[m] : p.consumoMensualKwh);
+    const pm = r.mensual[m];
+    const neto = Math.max(0, cm - pm);
+    const cA = costoFacturaMes(cm, tarifaA, m+1);
+    const cD = costoFacturaMes(neto, tarifaD, m+1);
+    html += `<tr>
+      <td>${MESES[m]}</td>
+      <td style="text-align:right;">${cm.toFixed(0)}</td>
+      <td style="text-align:right;">${pm.toFixed(0)}</td>
+      <td style="text-align:right;">${neto.toFixed(0)}</td>
+      <td style="text-align:right;">${fmtMoneda(cA)}</td>
+      <td style="text-align:right;">${fmtMoneda(cD)}</td>
+      <td style="text-align:right; font-weight:600;">${fmtMoneda(cA-cD)}</td>
+    </tr>`;
+  }
+  html += `</tbody></table></div>
+    <p style="font-size:11px; color:#999; font-style:italic; margin-top:10px;">
+      Nota: precios CFE referenciales 2024–2025. CFE ajusta tarifas mensualmente.
+      Para cálculo de proyecto real, actualiza los valores en <code>TARIFAS_CFE</code>.
+    </p>`;
+  cont.innerHTML = html;
 }
 
 function graficarSeguidor(p, r) {
@@ -1007,6 +1584,17 @@ function graficarAhorro(p, r) {
 function graficarConsumo(p, r) {
   destruirSi("consumo");
   const ctx = document.getElementById("chart-consumo").getContext("2d");
+
+  // Si el usuario cargó historial real, usar esa curva; si no, hogar promedio
+  const historial = obtenerHistorialMensual();
+  const consumoData = historial || Array(12).fill(CONSUMO_HOGAR);
+  const labelConsumo = historial ? "Tu consumo real" : "Hogar promedio";
+  const consumoAnual = consumoData.reduce((a, b) => a + b, 0);
+  const cobertura = consumoAnual > 0 ? (r.anual / consumoAnual * 100) : 0;
+  const titulo = historial
+    ? `Producción vs consumo real (cobertura anual: ${cobertura.toFixed(0)}%)`
+    : `Producción vs hogar promedio (cobertura: ${Math.round(r.cobertura)}%)`;
+
   charts.consumo = new Chart(ctx, {
     type: "bar",
     data: {
@@ -1014,14 +1602,14 @@ function graficarConsumo(p, r) {
       datasets: [
         { label: "Tu producción", data: r.mensual.map(v => Math.round(v)),
           backgroundColor: C_NARANJA, borderRadius: 4 },
-        { label: "Hogar promedio", data: Array(12).fill(CONSUMO_HOGAR),
+        { label: labelConsumo, data: consumoData.map(v => Math.round(v)),
           backgroundColor: C_AZUL, borderRadius: 4 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { title: { display: true,
-        text: `Producción vs hogar promedio (cobertura: ${Math.round(r.cobertura)}%)`,
+        text: titulo,
         font: { size: 14, weight: "bold" }, color: "#424242" } },
       scales: { y: { beginAtZero: true, title: { display: true, text: "kWh / mes", color: "#757575" } } }
     }
